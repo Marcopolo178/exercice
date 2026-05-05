@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تعلم القسمة المطولة 🎓</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root {
+  --blue:#42A5F5; --green:#66BB6A; --orange:#FF7043;
+  --yellow:#FFD600; --purple:#AB47BC;
+  --text:#1A237E; --card:#ffffff;
+  --shadow:0 10px 40px rgba(80,120,200,0.16);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:'Tajawal',sans-serif;
+  background:linear-gradient(145deg,#B3E5FC 0%,#E8F5E9 55%,#FFF9C4 100%);
+  min-height:100vh; padding:22px 12px 110px; overflow-x:hidden;
+}
+
+/* floating bubbles */
+.bbl{position:fixed;border-radius:50%;opacity:.11;animation:rise linear infinite;pointer-events:none;z-index:0;}
+@keyframes rise{from{transform:translateY(110vh)}to{transform:translateY(-20vh)}}
+
+h1{text-align:center;font-size:2rem;font-weight:900;color:var(--text);margin-bottom:4px;
+   text-shadow:0 2px 10px rgba(66,165,245,.25);position:relative;z-index:1;}
+.sub{text-align:center;color:#5C6BC0;font-size:1rem;margin-bottom:18px;position:relative;z-index:1;}
+
+/* tabs */
+.tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:22px;position:relative;z-index:1;}
+.tab{padding:9px 18px;border:none;border-radius:50px;font-family:'Tajawal',sans-serif;
+     font-size:1rem;font-weight:700;cursor:pointer;background:#fff;color:#5C6BC0;
+     box-shadow:0 3px 10px rgba(100,120,220,.12);transition:all .22s;}
+.tab.on{background:linear-gradient(135deg,#5C6BC0,#42A5F5);color:#fff;
+        box-shadow:0 6px 18px rgba(80,120,220,.28);transform:translateY(-2px);}
+.tab:not(.on):hover{background:#EEF2FF;transform:translateY(-1px);}
+
+/* card */
+.card{background:var(--card);border-radius:26px;box-shadow:var(--shadow);
+      max-width:680px;margin:0 auto;padding:28px 24px 22px;
+      position:relative;z-index:1;border:3px solid rgba(100,180,255,.15);}
+
+.prob-title{text-align:center;font-size:1.2rem;font-weight:700;color:#5C6BC0;margin-bottom:12px;}
+
+/* progress */
+.prog-wrap{height:9px;background:#E8EAF6;border-radius:50px;overflow:hidden;margin-bottom:20px;}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));
+          border-radius:50px;width:0;transition:width .7s ease;}
+
+/* ═══════════════════════════════════════
+   DIVISION CHAIR  —  كرسي القسمة الصحيح
+   ═══════════════════════════════════════
+   direction:ltr so "left" and "right" are physical
+
+   ┌─────────────────┬───────────────┐
+   │  المقسوم        │  المقسوم عليه │
+   │  676            │  7            │
+   │                 │  ─────────────│
+   │  − 63           │  خارج القسمة  │
+   │  ────           │  96           │
+   │  46             │               │
+   └─────────────────┴───────────────┘
+*/
+.chair{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  direction:ltr;          /* physical layout */
+  gap:0;
+  margin:0 auto 16px;
+  max-width:560px;
+}
+
+/* LEFT side: dividend + computation steps */
+.ch-left{
+  display:flex;flex-direction:column;
+  align-items:flex-end;
+  padding-right:16px;
+  min-width:210px;
+  direction:rtl;
+}
+
+/* vertical dividing bar */
+.ch-bar{width:5px;background:var(--blue);border-radius:3px;align-self:stretch;flex-shrink:0;}
+
+/* RIGHT side: divisor then horizontal line then quotient */
+.ch-right{
+  display:flex;flex-direction:column;
+  align-items:flex-start;
+  padding-left:16px;
+  min-width:130px;
+  direction:rtl;
+}
+
+.ch-label{font-size:.78rem;color:#90A4AE;font-weight:700;letter-spacing:.4px;
+          margin-bottom:5px;text-align:center;width:100%;}
+
+/* divisor box */
+.divisor-box{
+  font-size:2.1rem;font-weight:900;color:#fff;
+  background:linear-gradient(135deg,#42A5F5,#5C6BC0);
+  border-radius:13px;padding:6px 20px;display:inline-block;
+  box-shadow:0 4px 14px rgba(66,165,245,.3);white-space:nowrap;
+}
+
+/* horizontal line divisor / quotient */
+.h-line{width:100%;height:4px;background:var(--blue);border-radius:2px;margin:8px 0;}
+
+/* quotient digits */
+.q-row{display:flex;gap:5px;flex-wrap:wrap;min-height:50px;align-items:center;direction:ltr;}
+.qdig{
+  width:46px;height:46px;border-radius:13px;
+  background:linear-gradient(135deg,#A5D6A7,#43A047);
+  border:3px solid #2E7D32;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.65rem;font-weight:900;color:#fff;
+  box-shadow:0 4px 12px rgba(67,160,71,.3);
+  opacity:0;transform:scale(.5);
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+}
+.qdig.show{opacity:1;transform:scale(1);}
+
+/* ── dividend row ── */
+.div-row{display:flex;gap:5px;margin-bottom:10px;direction:ltr;}
+.dbox{
+  width:50px;height:56px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;font-size:1.85rem;font-weight:900;
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+  color:var(--text);background:#F0F4FF;border:2.5px solid #B3C5E8;
+}
+.dbox.hi    {background:linear-gradient(135deg,#FFF176,#FFD600);border-color:#FFB300;
+             box-shadow:0 4px 14px rgba(255,200,0,.4);transform:scale(1.12);}
+.dbox.merged{background:linear-gradient(135deg,#FF8A65,#FF5722);border-color:#E64A19;color:#fff;transform:scale(1.08);}
+.dbox.done  {background:linear-gradient(135deg,#A5D6A7,#66BB6A);border-color:#43A047;color:#fff;}
+.dbox.drop  {background:linear-gradient(135deg,#CE93D8,#AB47BC);border-color:#8E24AA;color:#fff;
+             transform:scale(1.06);animation:dropAnim .55s ease;}
+@keyframes dropAnim{
+  0%  {transform:translateY(-26px) scale(1.18);opacity:0;}
+  100%{transform:translateY(0)     scale(1.06);opacity:1;}
+}
+
+/* ── steps column ── */
+.steps-col{display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:100%;}
+
+.srow{
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:6px;width:100%;
+  opacity:0;transform:translateX(18px);
+  transition:opacity .42s,transform .42s;
+  font-size:1.35rem;font-weight:700;
+}
+.srow.vis{opacity:1;transform:translateX(0);}
+
+.snum{min-width:52px;text-align:center;border-radius:9px;padding:2px 10px;font-size:1.3rem;}
+.snum.wk {background:#FFF9C4;color:#F57F17;}
+.snum.sub{background:#FCE4EC;color:#C62828;}
+.snum.rem{background:#E8F5E9;color:#2E7D32;font-size:1.4rem;}
+.snum.cmb{background:#EDE7F6;color:#4527A0;}
+.sminus  {font-size:1.3rem;color:#EF9A9A;}
+.sarrow  {font-size:1.1rem;color:#90A4AE;}
+
+.sline{
+  width:85%;height:3px;align-self:flex-end;
+  background:linear-gradient(90deg,#EF9A9A,#FFCC02);
+  border-radius:2px;margin:2px 0;
+  opacity:0;transition:opacity .3s .12s;
+}
+.sline.vis{opacity:1;}
+
+/* final remainder */
+.fin-rem{
+  display:inline-block;
+  background:linear-gradient(135deg,#FF7043,#FF5722);
+  color:#fff;border-radius:50px;padding:7px 22px;
+  font-size:1.15rem;font-weight:700;
+  box-shadow:0 4px 14px rgba(255,87,34,.3);
+  margin-top:10px;
+  opacity:0;transform:scale(.7);
+  transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+.fin-rem.show{opacity:1;transform:scale(1);}
+
+/* input area */
+.input-area{display:none;text-align:center;margin:10px 0 4px;}
+.hint{color:#7986CB;font-size:1rem;margin-bottom:8px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.inp-row{display:flex;align-items:center;gap:10px;justify-content:center;}
+.ans-inp{
+  width:76px;height:58px;font-size:1.85rem;font-weight:900;
+  text-align:center;border:3.5px solid var(--blue);border-radius:14px;
+  outline:none;color:var(--text);font-family:'Tajawal',sans-serif;
+  background:#F0F8FF;box-shadow:0 4px 12px rgba(66,165,245,.14);
+  transition:border .2s,box-shadow .2s;
+}
+.ans-inp:focus{border-color:var(--yellow);box-shadow:0 0 0 4px rgba(255,214,0,.2);}
+.ok-btn{
+  padding:13px 22px;background:linear-gradient(135deg,#66BB6A,#43A047);
+  border:none;border-radius:13px;color:#fff;
+  font-size:1.05rem;font-weight:700;font-family:'Tajawal',sans-serif;
+  cursor:pointer;box-shadow:0 4px 13px rgba(67,160,71,.3);transition:all .2s;
+}
+.ok-btn:hover{transform:translateY(-2px);filter:brightness(1.08);}
+
+/* congrats */
+.congrats{display:none;text-align:center;padding:16px 0 4px;animation:popIn .55s ease;}
+@keyframes popIn{from{transform:scale(.65);opacity:0}to{transform:scale(1);opacity:1}}
+.congrats.show{display:block;}
+.cong-title{font-size:1.85rem;font-weight:900;color:#43A047;margin-bottom:8px;}
+.cong-ans  {font-size:1.35rem;color:var(--text);margin-bottom:14px;}
+.restart-btn{
+  padding:12px 30px;background:linear-gradient(135deg,#FF7043,#FF5722);
+  border:none;border-radius:50px;color:#fff;
+  font-size:1rem;font-weight:700;font-family:'Tajawal',sans-serif;
+  cursor:pointer;box-shadow:0 4px 14px rgba(255,87,34,.3);transition:all .2s;
+}
+.restart-btn:hover{transform:translateY(-2px);filter:brightness(1.1);}
+
+/* mascot */
+.mascot{
+  position:fixed;bottom:18px;left:22px;font-size:3rem;
+  z-index:10;cursor:default;user-select:none;
+  filter:drop-shadow(0 4px 7px rgba(0,0,0,.15));
+  animation:wag 2.4s ease-in-out infinite;
+}
+@keyframes wag{0%,100%{transform:rotate(-7deg) scale(1)}50%{transform:rotate(7deg) scale(1.06)}}
+.mascot:hover{animation:none;transform:scale(1.3) rotate(12deg)!important;}
+
+.speech{
+  position:fixed;bottom:78px;left:18px;background:#fff;
+  border:3px solid var(--green);border-radius:18px 18px 18px 4px;
+  padding:9px 14px;font-size:.88rem;color:#2E7D32;font-weight:700;
+  max-width:205px;box-shadow:0 4px 12px rgba(102,187,106,.22);
+  z-index:10;opacity:0;transform:translateY(12px);
+  transition:all .35s;pointer-events:none;
+}
+.speech.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:480px){
+  .dbox{width:42px;height:50px;font-size:1.5rem;}
+  .ch-left{min-width:170px;}
+  .ch-right{min-width:100px;}
+}
+</style>
+</head>
+<body>
+
+<div class="bbl" style="width:110px;height:110px;background:#4FC3F7;left:4%;animation-duration:17s;animation-delay:-3s"></div>
+<div class="bbl" style="width:75px;height:75px;background:#FFD600;left:82%;animation-duration:13s;animation-delay:-7s"></div>
+<div class="bbl" style="width:60px;height:60px;background:#66BB6A;left:60%;animation-duration:20s;animation-delay:-1s"></div>
+<div class="bbl" style="width:90px;height:90px;background:#CE93D8;left:28%;animation-duration:15s;animation-delay:-10s"></div>
+<div class="bbl" style="width:46px;height:46px;background:#FF7043;left:50%;animation-duration:22s;animation-delay:-5s"></div>
+
+<div class="mascot" id="mascot">🐕</div>
+<div class="speech" id="speech">هيا نتعلم معاً! 🐾</div>
+
+<h1>🎒 تعلّم القسمة المطولة</h1>
+<p class="sub">أجب على الأسئلة وشاهد الحل خطوة بخطوة!</p>
+
+<div class="tabs">
+  <button class="tab on" onclick="switchProb(0)">676 ÷ 7</button>
+  <button class="tab"    onclick="switchProb(1)">305 ÷ 7</button>
+  <button class="tab"    onclick="switchProb(2)">882 ÷ 7 ✨</button>
+  <button class="tab"    onclick="switchProb(3)">543 ÷ 7</button>
+</div>
+
+<div class="card">
+  <div class="prob-title" id="probTitle">حساب 676 ÷ 7</div>
+  <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+
+  <!--
+    كرسي القسمة الصحيح:
+    المقسوم (يسار) | خط عمودي | المقسوم عليه (يمين أعلى)
+                   |           | خط أفقي
+                   |           | خارج القسمة (يمين أسفل)
+  -->
+  <div class="chair">
+
+    <!-- LEFT: المقسوم + خطوات الحساب -->
+    <div class="ch-left">
+      <div class="ch-label">المقسوم</div>
+      <div class="div-row"  id="divRow"></div>
+      <div class="steps-col" id="stepsCol"></div>
+      <div class="fin-rem"  id="finRem"></div>
+    </div>
+
+    <div class="ch-bar"></div>
+
+    <!-- RIGHT: المقسوم عليه ثم خط ثم الخارج -->
+    <div class="ch-right">
+      <div class="ch-label">المقسوم عليه</div>
+      <div class="divisor-box" id="divisorBox">7</div>
+      <div class="h-line"></div>
+      <div class="ch-label">خارج القسمة</div>
+      <div class="q-row" id="qRow"></div>
+    </div>
+
+  </div>
+
+  <div class="input-area" id="inputArea">
+    <p class="hint" id="hintTxt">كم مرة يدخل 7 في هذا الرقم؟</p>
+    <div class="inp-row">
+      <input class="ans-inp" type="number" id="userInp" min="0" max="9" placeholder="؟">
+      <button class="ok-btn" onclick="checkAns()">✔ تأكيد</button>
+    </div>
+  </div>
+
+  <div class="congrats" id="congrats">
+    <div style="font-size:2.5rem;margin-bottom:6px">🎉</div>
+    <div class="cong-title">أحسنت! 🌟</div>
+    <div class="cong-ans" id="congAns"></div>
+    <button class="restart-btn" onclick="restart()">🔄 حاول مسألة أخرى</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   PROBLEMS
+   ═══════════════════════════════════════ */
+const PROBS = [
+  {
+    label:'676 ÷ 7', dividend:[6,7,6], divisor:7,
+    steps:[
+      { type:'first', digitIdx:[0],
+        isTooSmall:true,
+        tooSmallMsg:'6 أصغر من 7، لا يمكننا قسمتها!\nيجب أن نأخذ الرقم المجاور أيضاً 👀' },
+      { type:'merged', digitIdx:[0,1], working:67,
+        quotientDigit:9, product:63, remainder:4,
+        hint:'كم مرة يدخل 7 في 67؟' },
+      { type:'drop', digitIdx:[2], droppedIdx:2, droppedVal:6,
+        prevRemainder:4, working:46,
+        quotientDigit:6, product:42, remainder:4,
+        hint:'كم مرة يدخل 7 في 46؟' }
+    ]
+  },
+  {
+    label:'305 ÷ 7', dividend:[3,0,5], divisor:7,
+    steps:[
+      { type:'first', digitIdx:[0],
+        isTooSmall:true,
+        tooSmallMsg:'3 أصغر من 7، لا يمكننا قسمتها!\nيجب أن نأخذ الرقم المجاور أيضاً 👀' },
+      { type:'merged', digitIdx:[0,1], working:30,
+        quotientDigit:4, product:28, remainder:2,
+        hint:'كم مرة يدخل 7 في 30؟' },
+      { type:'drop', digitIdx:[2], droppedIdx:2, droppedVal:5,
+        prevRemainder:2, working:25,
+        quotientDigit:3, product:21, remainder:4,
+        hint:'كم مرة يدخل 7 في 25؟' }
+    ]
+  },
+  {
+    /* 882 ÷ 7 = 126  remainder 0  → divisible exactement! */
+    label:'882 ÷ 7', dividend:[8,8,2], divisor:7,
+    divisible:true,
+    steps:[
+      { type:'merged', digitIdx:[0], working:8,
+        quotientDigit:1, product:7, remainder:1,
+        hint:'كم مرة يدخل 7 في 8؟' },
+      { type:'drop', digitIdx:[1], droppedIdx:1, droppedVal:8,
+        prevRemainder:1, working:18,
+        quotientDigit:2, product:14, remainder:4,
+        hint:'كم مرة يدخل 7 في 18؟' },
+      { type:'drop', digitIdx:[2], droppedIdx:2, droppedVal:2,
+        prevRemainder:4, working:42,
+        quotientDigit:6, product:42, remainder:0,
+        hint:'كم مرة يدخل 7 في 42؟' }
+    ]
+  },
+  {
+    /* 543 ÷ 7 = 77  remainder 4  → not divisible */
+    label:'543 ÷ 7', dividend:[5,4,3], divisor:7,
+    divisible:false,
+    steps:[
+      { type:'merged', digitIdx:[0], working:5,
+        isTooSmall:true,
+        tooSmallMsg:'5 أصغر من 7، لا يمكننا قسمتها!\nيجب أن نأخذ الرقم المجاور أيضاً 👀' },
+      { type:'merged', digitIdx:[0,1], working:54,
+        quotientDigit:7, product:49, remainder:5,
+        hint:'كم مرة يدخل 7 في 54؟' },
+      { type:'drop', digitIdx:[2], droppedIdx:2, droppedVal:3,
+        prevRemainder:5, working:53,
+        quotientDigit:7, product:49, remainder:4,
+        hint:'كم مرة يدخل 7 في 53؟' }
+    ]
+  }
+];
+
+let prob=0, si=0, qDigs=[];
+
+function switchProb(i){
+  prob=i;
+  document.querySelectorAll('.tab').forEach((b,j)=>b.classList.toggle('on',j===i));
+  restart(true);
+}
+
+function restart(silent=false){
+  si=0; qDigs=[];
+  const p=PROBS[prob];
+  document.getElementById('probTitle').textContent='حساب '+p.label;
+  document.getElementById('divisorBox').textContent=p.divisor;
+  renderDividend();
+  document.getElementById('stepsCol').innerHTML='';
+  document.getElementById('qRow').innerHTML='';
+  document.getElementById('inputArea').style.display='none';
+  document.getElementById('congrats').classList.remove('show');
+  const fr=document.getElementById('finRem');
+  fr.classList.remove('show'); fr.textContent='';
+  setProgress(0);
+  if(!silent) mascotSay('هيا نبدأ القسمة! 🐾',3000);
+  setTimeout(()=>runStep(0), silent?60:700);
+}
+
+function renderDividend(){
+  const p=PROBS[prob], row=document.getElementById('divRow');
+  row.innerHTML='';
+  p.dividend.forEach((d,i)=>{
+    const b=document.createElement('div');
+    b.className='dbox'; b.id='d'+i; b.textContent=d;
+    row.appendChild(b);
+  });
+}
+
+function setProgress(pct){ document.getElementById('progBar').style.width=pct+'%'; }
+
+/* ═══════════════════════════════════════
+   RUN STEP
+   ═══════════════════════════════════════ */
+async function runStep(idx){
+  const p=PROBS[prob];
+  if(idx>=p.steps.length){ showCongrats(); return; }
+  const step=p.steps[idx];
+
+  /* highlight digit(s) */
+  step.digitIdx.forEach(i=>{
+    const b=document.getElementById('d'+i);
+    if(b){ b.className='dbox'; setTimeout(()=>b.classList.add('hi'),120); }
+  });
+
+  /* drop branch: show remainder + dropped digit combined BEFORE asking */
+  if(step.type==='drop'){
+    const dBox=document.getElementById('d'+step.droppedIdx);
+    if(dBox) dBox.className='dbox drop';
+    await sleep(480);
+    mascotSay(`ننزل الرقم ${step.droppedVal} بجانب الباقي ${step.prevRemainder} 🐾`,3200);
+    await showCombinedRow(step.prevRemainder, step.droppedVal, step.working);
+    await sleep(350);
+  }
+
+  /* ask user — even for tooSmall steps, let them try first */
+  setProgress(Math.round(((idx+.5)/p.steps.length)*100));
+  const firstDigit = p.dividend[step.digitIdx[0]];
+  document.getElementById('hintTxt').textContent =
+    step.isTooSmall
+      ? `حاول! كم مرة يدخل ${p.divisor} في ${firstDigit}؟`
+      : (step.hint || `كم مرة يدخل ${p.divisor} في ${step.working}؟`);
+  document.getElementById('inputArea').style.display='block';
+  document.getElementById('userInp').value='';
+  document.getElementById('userInp').focus();
+  mascotSay(step.isTooSmall
+    ? `جرّب! كم مرة يدخل ${p.divisor} في ${firstDigit}؟ 🐾`
+    : `فكر جيداً: ${step.working} ÷ ${p.divisor} = ؟ 🐾`, 0);
+  si=idx;
+}
+
+/* ═══════════════════════════════════════
+   CHECK ANSWER
+   ═══════════════════════════════════════ */
+async function checkAns(){
+  const val=parseInt(document.getElementById('userInp').value);
+  if(isNaN(val)||val<0){
+    await kidAlert({icon:'🤔',title:'اكتب رقماً!',html:'أدخل رقماً صحيحاً',btn:'حسناً',color:'#5C6BC0'});
+    return;
+  }
+  const p=PROBS[prob], step=p.steps[si], correct=step.quotientDigit;
+
+  /* ── tooSmall step: any answer → show explanation → move on ── */
+  if(step.isTooSmall){
+    document.getElementById('inputArea').style.display='none';
+    await kidAlert({icon:'⚠️',title:'انتبه!',
+      html:`<span style="font-family:Tajawal,sans-serif;font-size:1.1rem;line-height:1.8">${step.tooSmallMsg}</span>`,
+      btn:'فهمت! 👍',color:'#FF7043'});
+    /* merge the two digits visually */
+    document.getElementById('d0').className='dbox merged';
+    document.getElementById('d1').className='dbox merged';
+    await sleep(350);
+    const nextIdx=si+1;
+    si=nextIdx; runStep(nextIdx); return;
+  }
+
+  if(val>correct){
+    await kidAlert({icon:'📉',title:'الرقم كبير جداً!',
+      html:`<span style="font-family:Tajawal,sans-serif;font-size:1.05rem">${val}×${p.divisor}=${val*p.divisor} أكبر من ${step.working}!<br>حاول تقليله 🔽</span>`,
+      btn:'سأحاول مجدداً',color:'#FF7043'});
+    document.getElementById('userInp').focus(); return;
+  }
+  if(val<correct){
+    await kidAlert({icon:'📈',title:'الرقم صغير!',
+      html:`<span style="font-family:Tajawal,sans-serif;font-size:1.05rem">${val}×${p.divisor}=${val*p.divisor}<br>يمكنك زيادته! 🔼</span>`,
+      btn:'سأحاول مجدداً',color:'#FF9800'});
+    document.getElementById('userInp').focus(); return;
+  }
+
+  /* ✓ correct */
+  document.getElementById('inputArea').style.display='none';
+  await kidAlert({icon:'🌟',title:'ممتاز!',
+    html:`<span style="font-family:Tajawal,sans-serif;font-size:1.1rem">${correct}×${p.divisor}=${step.product} ✅<br>الباقي: ${step.remainder}</span>`,
+    btn:'رائع! استمر 🚀',color:'#43A047'});
+
+  addQDig(correct);
+
+  /* For merged step, show the working number first then subtract */
+  await showSubRows(step);
+
+  step.digitIdx.forEach(i=>{
+    const b=document.getElementById('d'+i); if(b) b.className='dbox done';
+  });
+  setProgress(Math.round(((si+1)/p.steps.length)*100));
+
+  const next=si+1;
+  if(next<p.steps.length){ await sleep(350); runStep(next); }
+  else                    { await sleep(400); showFinalRemainder(step.remainder); }
+}
+
+/* add quotient digit on the right */
+function addQDig(d){
+  const row=document.getElementById('qRow');
+  const box=document.createElement('div');
+  box.className='qdig'; box.textContent=d;
+  row.appendChild(box);
+  setTimeout(()=>box.classList.add('show'),60);
+  qDigs.push(d);
+}
+
+/* subtraction rows under the working number */
+async function showSubRows(step){
+  const col=document.getElementById('stepsCol');
+
+  /* for merged: show working number */
+  if(step.type==='merged'){
+    const r1=mkRow([{cls:'snum wk',t:step.working}]);
+    col.appendChild(r1); await sleep(160); r1.classList.add('vis');
+  }
+
+  await sleep(200);
+  const l1=mkLine(); col.appendChild(l1); await sleep(50); l1.classList.add('vis');
+
+  await sleep(160);
+  const r2=mkRow([{cls:'sminus',t:'−'},{cls:'snum sub',t:step.product}]);
+  col.appendChild(r2); await sleep(50); r2.classList.add('vis');
+
+  await sleep(200);
+  const l2=mkLine(); col.appendChild(l2); await sleep(50); l2.classList.add('vis');
+
+  await sleep(160);
+  const r3=mkRow([{cls:'snum rem',t:step.remainder}]);
+  col.appendChild(r3); await sleep(50); r3.classList.add('vis');
+}
+
+/* combined row: باقي سابق + رقم منزّل → مجموع */
+async function showCombinedRow(prevRem, dropped, combined){
+  const col=document.getElementById('stepsCol');
+  // Show: [prevRem][dropped] → [combined]
+  // This replaces the last remainder row visually (appended after it)
+  const row=mkRow([
+    {cls:'snum rem',t:prevRem},
+    {cls:'snum cmb',t:dropped},
+    {cls:'sarrow',  t:'←'},
+    {cls:'snum wk', t:combined}
+  ]);
+  col.appendChild(row); await sleep(80); row.classList.add('vis');
+  await sleep(280);
+}
+
+/* final remainder badge */
+function showFinalRemainder(rem){
+  const chip=document.getElementById('finRem');
+  if(rem===0){
+    chip.textContent='القسمة تامة! الباقي = 0 ✅';
+    chip.style.background='linear-gradient(135deg,#66BB6A,#2E7D32)';
+  } else {
+    chip.textContent=`الباقي النهائي = ${rem}`;
+    chip.style.background='';
+  }
+  chip.classList.add('show');
+  setTimeout(showCongrats,1000);
+}
+
+function showCongrats(){
+  const p=PROBS[prob], q=qDigs.join('');
+  const last=p.steps[p.steps.length-1];
+  const rem=last.remainder;
+  let msg, badge='';
+  if(rem===0){
+    badge='<div style="display:inline-block;background:linear-gradient(135deg,#66BB6A,#2E7D32);color:#fff;border-radius:50px;padding:6px 20px;font-size:1rem;font-weight:700;margin-bottom:10px">✅ قابل للقسمة على 7 تماماً!</div><br>';
+    msg=`<b>${p.dividend.join('')} ÷ ${p.divisor} = ${q}</b> بدون باقي 🎊`;
+  } else {
+    badge='<div style="display:inline-block;background:linear-gradient(135deg,#FF7043,#E64A19);color:#fff;border-radius:50px;padding:6px 20px;font-size:1rem;font-weight:700;margin-bottom:10px">❌ غير قابل للقسمة على 7 تماماً</div><br>';
+    msg=`<b>${p.dividend.join('')} ÷ ${p.divisor} = ${q}</b> والباقي ${rem} 🎊`;
+  }
+  document.getElementById('congAns').innerHTML=badge+msg;
+  document.getElementById('congrats').classList.add('show');
+  setProgress(100);
+  mascotSay(rem===0?'رائع! العدد قابل للقسمة تماماً! 🏆':'أحسنت! هناك باقٍ، العدد غير قابل للقسمة! 🏆',0);
+}
+
+/* ── helpers ── */
+function mkRow(items){
+  const row=document.createElement('div'); row.className='srow';
+  items.forEach(it=>{
+    const s=document.createElement('span'); s.className=it.cls; s.textContent=it.t;
+    row.appendChild(s);
+  });
+  return row;
+}
+function mkLine(){ const l=document.createElement('div'); l.className='sline'; return l; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function kidAlert({icon,title,html,btn,color}){
+  return Swal.fire({
+    iconHtml:icon,
+    title:`<span style="font-family:Tajawal,sans-serif;font-weight:900;color:${color}">${title}</span>`,
+    html, confirmButtonText:btn, confirmButtonColor:color,
+    backdrop:'rgba(0,0,0,.3)', allowOutsideClick:false, rtl:true,
+    didOpen:()=>{
+      const p=Swal.getPopup();
+      p.style.fontFamily='Tajawal,sans-serif';
+      p.style.borderRadius='22px';
+      p.style.direction='rtl';
+    }
+  });
+}
+
+let mTimer=null;
+function mascotSay(msg,dur=3000){
+  const b=document.getElementById('speech');
+  b.textContent=msg; b.classList.add('show');
+  if(mTimer) clearTimeout(mTimer);
+  if(dur>0) mTimer=setTimeout(()=>b.classList.remove('show'),dur);
+}
+
+document.getElementById('mascot').addEventListener('click',()=>{
+  const msgs=['هيا! أنت تستطيع! 💪','لا تخف من الخطأ! 🐾','رائع جداً! 🌟','القسمة سهلة! 🎒','فكر ببطء وثق بنفسك! 🧠'];
+  mascotSay(msgs[Math.floor(Math.random()*msgs.length)],3200);
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('inputArea').style.display!=='none') checkAns();
+});
+
+window.addEventListener('DOMContentLoaded',()=>{
+  restart(true);
+  setTimeout(()=>mascotSay('مرحباً! أنا كلبك الرياضي 🐕 هيا نتعلم القسمة!',4500),900);
+});
+</script>
+</body>
+</html>
